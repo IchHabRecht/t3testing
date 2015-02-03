@@ -1,95 +1,184 @@
-@ECHO OFF & SETLOCAL ENABLEDELAYEDEXPANSION
+@ECHO OFF & SETLOCAL
+
+:: Initialize variables
+SET default_php_path=C:\php
+SET php_path=
+SET default_phpunit_path=%~dp0bin
+SET phpunit_path=
+SET typo3_path=.
+SET mysql_defaults_file=
+SET mysql_host=127.0.0.1
+SET mysql_port=3306
+SET mysql_user=root
+SET mysql_password=
+SET mysql_database=functional
+
+:ARGUMENT_LOOP
+IF NOT "%1" == "" (
+	IF /I [%1] == [--php_path] (
+		SET php_path=%2
+		SHIFT
+	)
+	IF /I [%1] == [--phpunit_path] (
+		SET phpunit_path=%2
+		SHIFT
+	)
+	IF /I [%1] == [--mysql_defaults_file] (
+		SET mysql_defaults_file=%2
+		SHIFT
+	)
+	IF /I [%1] == [--mysql_host] (
+		SET mysql_host=%2
+		SHIFT
+	)
+	IF /I [%1] == [--mysql_port] (
+		SET mysql_port=%2
+		SHIFT
+	)
+	IF /I [%1] == [--mysql_user] (
+		SET mysql_user=%2
+		SHIFT
+	)
+	IF /I [%1] == [--mysql_password] (
+		SET mysql_password=%2
+		SHIFT
+	)
+	IF /I [%1] == [--mysql_database] (
+		SET mysql_database=%2
+		SHIFT
+	)
+	IF /I [%1] == [/?] (
+		GOTO USAGE
+	) ELSE (
+		SET typo3_path=%1
+	)
+	SHIFT
+	GOTO ARGUMENT_LOOP
+)
+
+IF NOT [%php_path%] == [] GOTO PHP_LOOP
+
 :: Check php command
 php --version >nul 2>nul
 IF %ERRORLEVEL% == 0 GOTO PHPUNIT
-
-:: Try default php path
-SET php_path=C:\php
+SET php_path=%default_php_path%
 
 :PHP_LOOP
+:: Remove any quotes from path
+SET php_path=%php_path:"=%
+:: Remove any backslash from path
+IF %php_path:~-1% == \ SET php_path=%php_path:~0,-1%
 :: Try to execute php
 "%php_path%\php" --version >nul 2>nul
 IF %ERRORLEVEL% == 0 GOTO ADD_PHP
 
 :: Ask for php path
-SET /p php_path="Please enter path to php.exe: "
-:: Remove any quotes from path
-SET php_path=%php_path:"=%
-:: Remove any backslash from path
-IF %php_path:~-1% == \ SET php_path=%php_path:~0,-1%
+SET /P php_path="Please enter path to php.exe: "
 GOTO PHP_LOOP
 
 :ADD_PHP
 :: Add php path to global path variable
-ENDLOCAL & SET php_path=%php_path%
 SET path=%path%;"%php_path%"
-SETLOCAL ENABLEDELAYEDEXPANSION
+ECHO PHP found in "%php_path%" ...
 
 :PHPUNIT
-call phpunit >nul 2>nul
-IF %ERRORLEVEL% == 0 GOTO TYPO3
-IF %ERRORLEVEL% == 2 GOTO TYPO3
+IF NOT [%phpunit_path%] == [] GOTO PHPUNIT_LOOP
 
-: Try to find phpunit in current path
-SET phpunit_path=%~dp0bin
+CALL phpunit.bat >nul 2>nul
+ECHO %ERRORLEVEL%
+IF %ERRORLEVEL% == 0 GOTO TYPO3_LOOP
+IF %ERRORLEVEL% == 2 GOTO TYPO3_LOOP
+SET phpunit_path=%default_phpunit_path%
 
 :PHPUNIT_LOOP
-:: Find phpunit executable
-IF EXIST "%phpunit_path%\phpunit.bat" GOTO ADD_PHPUNIT
-
-:: Ask for phpunit path
-SET /p phpunit_path="Please enter path to phpunit.bat: "
 :: Remove any quotes from path
 SET phpunit_path=%phpunit_path:"=%
 :: Remove any backslash from path
 IF %phpunit_path:~-1% == \ SET phpunit_path=%phpunit_path:~0,-1%
+:: Find phpunit executable
+IF EXIST "%phpunit_path%\phpunit.bat" GOTO ADD_PHPUNIT
+
+:: Ask for phpunit path
+SET /P phpunit_path="Please enter path to phpunit.bat: "
 GOTO PHPUNIT_LOOP
 
 :ADD_PHPUNIT
 :: Add phpunit path to global path variable
-ENDLOCAL & SET phpunit_path=%phpunit_path%
 SET path=%path%;"%phpunit_path%"
-SETLOCAL ENABLEDELAYEDEXPANSION
-
-:TYPO3
-:: Find TYPO3 root
-SET typo3_path=.
+ECHO PHPUnit found in "%phpunit_path%" ...
 
 :TYPO3_LOOP
-IF EXIST "%typo3_path%\typo3/sysext/core/Build/UnitTests.xml" GOTO UNITTESTS
-
-:: Ask for TYPO3 path
-SET /p typo3_path="Please enter path to TYPO3 root: "
 :: Remove any quotes from path
 SET typo3_path=%typo3_path:"=%
+IF EXIST "%typo3_path%\typo3\sysext\core\Build\UnitTests.xml" GOTO UNITTESTS
+
+:: Ask for TYPO3 path
+SET /P typo3_path="Please enter path to TYPO3 root: "
 GOTO TYPO3_LOOP
 
 :UNITTESTS
-cd "%typo3_path%"
-call phpunit.bat -c typo3/sysext/core/Build/UnitTests.xml
-IF NOT %ERRORLEVEL% == 0 EXIT /b
+CD /D "%typo3_path%"
+CALL phpunit.bat -c typo3/sysext/core/Build/UnitTests.xml
+IF NOT %ERRORLEVEL% == 0 EXIT /B
 
-:: If Ramdisk isn't found, don't execute the functional tests
-IF NOT EXIST "H:\MySQL Server" EXIT /b
+:: Check MySQL access
+IF NOT [%mysql_defaults_file%] == [] (
+	IF NOT EXIST %mysql_defaults_file% (
+		ECHO mysql_defaults_file %mysql_defaults_file% not found
+		GOTO EOF
+	)
+)
 
-:: Check mysql access
-netstat -ona | FINDSTR 3307 >nul 2>nul
+:: Check if given mysql_port is already in use
+NETSTAT -ona | FINDSTR %mysql_port% >nul 2>nul
 IF %ERRORLEVEL% == 0 GOTO FUNCTIONALTESTS
 
-ECHO "Starting MySQL Server..."
-::dir /B /S mysqld.exe
-START /B CMD /C ""C:\Program Files\MySQL Server\bin\mysqld" --defaults-file="H:\MySQL Server\my-typo3ram.ini" --standalone"
-:: Sleep for 10 seconds
-ping -n 10 127.0.0.1 > NUL
+:: Find mysqld.exe to start MySQL Server
+ECHO Trying to start MySQL Server ...
+SET mysqld_path=
+CD /D C:\
+FOR /F "tokens=*" %%a IN ('dir /B /S mysqld.exe') DO (
+	SET mysqld_path=%%a
+	GOTO START_MYSQL
+)
+
+:START_MYSQL
+IF NOT [%mysql_defaults_file%] == [] (
+	SET mysql_defaults_file=--defaults-file=%mysql_defaults_file%
+)
+IF NOT "%mysqld_path%" == "" (
+	ECHO Starting MySQL Server in "%mysqld_path%" ...
+	START /B CMD /C ""%mysqld_path%" %mysql_defaults_file% --standalone"
+	:: Sleep for 10 seconds
+	PING -n 10 127.0.0.1 >nul
+)
 
 :FUNCTIONALTESTS
-set typo3DatabaseHost=127.0.0.1
-set typo3DatabasePort=3307
-set typo3DatabaseUsername=root
-set typo3DatabasePassword=
-set typo3DatabaseName=functional
+CD /D "%typo3_path%"
+SET typo3DatabaseHost=%mysql_host%
+SET typo3DatabasePort=%mysql_port%
+SET typo3DatabaseUsername=%mysql_user%
+SET typo3DatabasePassword=%mysql_password%
+SET typo3DatabaseName=%mysql_database%
 
 :: Remove old test folders
 FOR /D %%d IN ("typo3temp\functional-*") DO RMDIR /S /Q "%%d"
 
-call phpunit.bat -c typo3/sysext/core/Build/FunctionalTests.xml
+CALL phpunit.bat -c typo3/sysext/core/Build/FunctionalTests.xml
+GOTO EOF
+
+:USAGE
+ECHO Usage: t3testing.bat [options...] [typo3_path]
+ECHO.
+ECHO Options:
+ECHO --php_path=path                   Path to PHP executable. Default "C:\php"
+ECHO --phpunit_path=path               Path to phpunit.bat file from composer installation. Default ".\bin"
+ECHO --mysql_defaults_file=file_name   Path to my.ini file with the MySQL Server configuration
+ECHO --mysql_host=addr                 Address where MySQL Server is listening. Default 127.0.0.1
+ECHO --mysql_port=port_num             Port number where MySQL Server is listening. Default 3306
+ECHO --mysql_user=user_name            User to connect to MySQL Server. Default "root"
+ECHO --mysql_password=password         Password for user to connect to MySQL Server. Default ^<empty^>
+ECHO --mysql_database=prefix           Prefix for databases created for functional tests. Default "functional"
+
+:EOF
+EXIT /B
