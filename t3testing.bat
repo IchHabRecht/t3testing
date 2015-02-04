@@ -134,28 +134,29 @@ IF NOT [%mysql_defaults_file%] == [] (
 )
 
 :: Look for an existing connection on port
+SET mysql_path=
 SET pid=
 FOR /F "tokens=5" %%p IN ('NETSTAT -ona ^| FINDSTR %mysql_port%') DO (
 	IF NOT %%p == 0 SET pid=%%p
 )
 IF NOT "%pid%" == "" GOTO FUNCTIONALTESTS
 
-:: Find mysqld.exe to start MySQL Server
-ECHO Trying to start MySQL Server ...
-SET mysqld_path=
+:: Find mysqld.exe and start MySQL Server
+ECHO Trying to find MySQL Server ...
 PUSHD C:\
 FOR /F "tokens=*" %%a IN ('dir /B /S mysqld.exe') DO (
-	SET mysqld_path=%%a
+	SET mysql_path=%%a
 	GOTO START_MYSQL
 )
 
 :START_MYSQL
+SET mysql_path=%mysql_path:mysqld.exe=%
 IF NOT [%mysql_defaults_file%] == [] (
 	SET mysql_defaults_file=--defaults-file=%mysql_defaults_file%
 )
-IF NOT "%mysqld_path%" == "" (
-	ECHO Starting MySQL Server in "%mysqld_path%" ...
-	START /B CMD /C ""%mysqld_path%" %mysql_defaults_file% --standalone"
+IF NOT "%mysql_path%" == "" (
+	ECHO Starting MySQL Server in "%mysql_path%" ...
+	START /B CMD /C ""%mysql_path%mysqld.exe" %mysql_defaults_file% --standalone"
 	:: Sleep for 10 seconds
 	PING -n 10 127.0.0.1 >nul
 )
@@ -172,6 +173,11 @@ SET typo3DatabaseName=%mysql_database%
 FOR /D %%d IN ("typo3temp\functional-*") DO RMDIR /S /Q "%%d"
 
 CALL phpunit.bat -c typo3/sysext/core/Build/FunctionalTests.xml
+
+IF NOT "%mysql_path%" == "" (
+	ECHO "Stopping MySQL Server ...
+	START /B CMD /C ""%mysql_path%mysqladmin.exe" -u %mysql_user% --password="%mysql_password%" --port=%mysql_port% shutdown"
+)
 GOTO EOF
 
 :USAGE
