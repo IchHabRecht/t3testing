@@ -154,9 +154,9 @@ IF NOT "%mysqld_path%" == "" (
 	:: Sleep for 10 seconds
 	PING -n 10 127.0.0.1 >nul
 )
+POPD
 
 :FUNCTIONALTESTS
-POPD
 SET typo3DatabaseHost=%mysql_host%
 SET typo3DatabasePort=%mysql_port%
 SET typo3DatabaseUsername=%mysql_user%
