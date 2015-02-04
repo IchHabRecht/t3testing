@@ -133,9 +133,12 @@ IF NOT [%mysql_defaults_file%] == [] (
 	)
 )
 
-:: Check if given mysql_port is already in use
-NETSTAT -ona | FINDSTR %mysql_port% >nul 2>nul
-IF %ERRORLEVEL% == 0 GOTO FUNCTIONALTESTS
+:: Look for an existing connection on port
+SET pid=
+FOR /F "tokens=5" %%p IN ('NETSTAT -ona ^| FINDSTR %mysql_port%') DO (
+	IF NOT %%p == 0 SET pid=%%p
+)
+IF NOT "%pid%" == "" GOTO FUNCTIONALTESTS
 
 :: Find mysqld.exe to start MySQL Server
 ECHO Trying to start MySQL Server ...
