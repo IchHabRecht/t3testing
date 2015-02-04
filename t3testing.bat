@@ -120,6 +120,8 @@ GOTO TYPO3_LOOP
 
 :UNITTESTS
 CD /D "%typo3_path%"
+:: Delete existing Cache folder
+IF EXIST "%typo3_path%\typo3temp\Cache" RMDIR /S /Q "%typo3_path%\typo3temp\Cache"
 CALL phpunit.bat -c typo3/sysext/core/Build/UnitTests.xml
 IF NOT %ERRORLEVEL% == 0 EXIT /B
 
