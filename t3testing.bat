@@ -110,6 +110,8 @@ ECHO PHPUnit found in "%phpunit_path%" ...
 :TYPO3_LOOP
 :: Remove any quotes from path
 SET typo3_path=%typo3_path:"=%
+:: Remove any backslash from path
+IF %typo3_path:~-1% == \ SET typo3_path=%typo3_path:~0,-1%
 IF EXIST "%typo3_path%\typo3\sysext\core\Build\UnitTests.xml" GOTO UNITTESTS
 
 :: Ask for TYPO3 path
