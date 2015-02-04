@@ -136,7 +136,7 @@ IF %ERRORLEVEL% == 0 GOTO FUNCTIONALTESTS
 :: Find mysqld.exe to start MySQL Server
 ECHO Trying to start MySQL Server ...
 SET mysqld_path=
-CD /D C:\
+PUSHD C:\
 FOR /F "tokens=*" %%a IN ('dir /B /S mysqld.exe') DO (
 	SET mysqld_path=%%a
 	GOTO START_MYSQL
@@ -154,7 +154,7 @@ IF NOT "%mysqld_path%" == "" (
 )
 
 :FUNCTIONALTESTS
-CD /D "%typo3_path%"
+POPD
 SET typo3DatabaseHost=%mysql_host%
 SET typo3DatabasePort=%mysql_port%
 SET typo3DatabaseUsername=%mysql_user%
