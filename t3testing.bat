@@ -85,7 +85,6 @@ ECHO PHP found in "%php_path%" ...
 IF NOT [%phpunit_path%] == [] GOTO PHPUNIT_LOOP
 
 CALL phpunit.bat >nul 2>nul
-ECHO %ERRORLEVEL%
 IF %ERRORLEVEL% == 0 GOTO TYPO3_LOOP
 IF %ERRORLEVEL% == 2 GOTO TYPO3_LOOP
 SET phpunit_path=%default_phpunit_path%
