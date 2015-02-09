@@ -127,13 +127,13 @@ CALL phpunit.bat -c typo3/sysext/core/Build/UnitTests.xml
 IF NOT %ERRORLEVEL% == 0 EXIT /B
 
 :: Check MySQL access
-IF NOT [%mysql_defaults_file%] == [] (
-	IF NOT EXIST %mysql_defaults_file% (
-		ECHO mysql_defaults_file %mysql_defaults_file% not found
-		GOTO EOF
-	)
+IF [%mysql_defaults_file%] == [] GOTO CHECK_MYSQL_PORT
+IF NOT EXIST %mysql_defaults_file% (
+	ECHO mysql_defaults_file %mysql_defaults_file% not found
+	GOTO EOF
 )
 
+:CHECK_MYSQL_PORT
 :: Look for an existing connection on port
 SET mysql_path=
 SET pid=
