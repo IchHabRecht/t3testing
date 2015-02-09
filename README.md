@@ -32,3 +32,6 @@ Password for user to connect to MySQL Server. Default ^<empty^>
 
 `--mysql_database=prefix`
 Prefix for databases created for functional tests. Default "functional"
+
+`--typo3_path=path`
+Path to TYPO3 root Default ".\"

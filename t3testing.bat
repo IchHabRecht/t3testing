@@ -47,10 +47,12 @@ IF NOT "%1" == "" (
 		SET mysql_database=%2
 		SHIFT
 	)
+	IF /I [%1] == [--typo3_path] (
+		SET typo3_path=%2
+		SHIFT
+	)
 	IF /I [%1] == [/?] (
 		GOTO USAGE
-	) ELSE (
-		SET typo3_path=%1
 	)
 	SHIFT
 	GOTO ARGUMENT_LOOP
@@ -180,7 +182,7 @@ IF NOT "%mysql_path%" == "" (
 GOTO EOF
 
 :USAGE
-ECHO Usage: t3testing.bat [options...] [typo3_path]
+ECHO Usage: t3testing.bat [options...]
 ECHO.
 ECHO Options:
 ECHO --php_path=path                   Path to PHP executable. Default "C:\php"
@@ -191,6 +193,7 @@ ECHO --mysql_port=port_num             Port number where MySQL Server is listeni
 ECHO --mysql_user=user_name            User to connect to MySQL Server. Default "root"
 ECHO --mysql_password=password         Password for user to connect to MySQL Server. Default ^<empty^>
 ECHO --mysql_database=prefix           Prefix for databases created for functional tests. Default "functional"
+ECHO --typo3_path=path                 Path to TYPO3 root Default ".\"
 
 :EOF
 EXIT /B
