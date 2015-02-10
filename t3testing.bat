@@ -149,6 +149,8 @@ FOR /F "tokens=*" %%a IN ('dir /B /S mysqld.exe') DO (
 	SET mysql_path=%%a
 	GOTO START_MYSQL
 )
+ECHO MySQL Server not running and no executable found. Please start MySQL Server on your own and restart tests
+GOTO EOF
 
 :START_MYSQL
 SET mysql_path=%mysql_path:mysqld.exe=%
