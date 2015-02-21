@@ -35,3 +35,5 @@ Prefix for databases created for functional tests. Default "functional"
 
 `--typo3_path=path`
 Path to TYPO3 root Default ".\"
+
+Furthermore you can add PHPUnit command-line test runner's options. See https://phpunit.de/manual/current/en/textui.html#textui.clioptions

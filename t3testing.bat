@@ -12,49 +12,71 @@ SET mysql_port=3306
 SET mysql_user=root
 SET mysql_password=
 SET mysql_database=functional
+SET phpunit_arguments=
 
 :ARGUMENT_LOOP
 IF NOT "%1" == "" (
 	IF /I [%1] == [--php_path] (
 		SET php_path=%2
 		SHIFT
-	)
-	IF /I [%1] == [--phpunit_path] (
-		SET phpunit_path=%2
-		SHIFT
-	)
-	IF /I [%1] == [--mysql_defaults_file] (
-		SET mysql_defaults_file=%2
-		SHIFT
-	)
-	IF /I [%1] == [--mysql_host] (
-		SET mysql_host=%2
-		SHIFT
-	)
-	IF /I [%1] == [--mysql_port] (
-		SET mysql_port=%2
-		SHIFT
-	)
-	IF /I [%1] == [--mysql_user] (
-		SET mysql_user=%2
-		SHIFT
-	)
-	IF /I [%1] == [--mysql_password] (
-		SET mysql_password=%2
-		SHIFT
-	)
-	IF /I [%1] == [--mysql_database] (
-		SET mysql_database=%2
-		SHIFT
-	)
-	IF /I [%1] == [--typo3_path] (
-		SET typo3_path=%2
-		SHIFT
-	)
-	IF /I [%1] == [/?] (
-		GOTO USAGE
+		SET i=0
+	) ELSE (
+		IF /I [%1] == [--phpunit_path] (
+			SET phpunit_path=%2
+			SHIFT
+			SET i=0
+		) ELSE (
+			IF /I [%1] == [--mysql_defaults_file] (
+				SET mysql_defaults_file=%2
+				SHIFT
+				SET i=0
+			) ELSE (
+				IF /I [%1] == [--mysql_host] (
+					SET mysql_host=%2
+					SHIFT
+					SET i=0
+				) ELSE (
+					IF /I [%1] == [--mysql_port] (
+						SET mysql_port=%2
+						SHIFT
+						SET i=0
+					) ELSE (
+						IF /I [%1] == [--mysql_user] (
+							SET mysql_user=%2
+							SHIFT
+							SET i=0
+							) ELSE (
+							IF /I [%1] == [--mysql_password] (
+								SET mysql_password=%2
+								SHIFT
+								SET i=0
+							) ELSE (
+								IF /I [%1] == [--mysql_database] (
+									SET mysql_database=%2
+									SHIFT
+									SET i=0
+								) ELSE (
+									IF /I [%1] == [--typo3_path] (
+										SET typo3_path=%2
+										SHIFT
+										SET i=0
+										) ELSE (
+										IF /I [%1] == [/?] (
+											GOTO USAGE
+										) ELSE (
+											SET phpunit_arguments=%phpunit_arguments% %1
+										)
+									)
+								)
+							)
+						)
+					)
+				)
+			)
+		)
 	)
 	SHIFT
+
 	GOTO ARGUMENT_LOOP
 )
 
@@ -123,7 +145,7 @@ GOTO TYPO3_LOOP
 CD /D "%typo3_path%"
 :: Delete existing Cache folder
 IF EXIST "%typo3_path%\typo3temp\Cache" RMDIR /S /Q "%typo3_path%\typo3temp\Cache"
-CALL phpunit.bat -c typo3/sysext/core/Build/UnitTests.xml
+CALL phpunit.bat -c typo3/sysext/core/Build/UnitTests.xml %phpunit_arguments%
 IF NOT %ERRORLEVEL% == 0 EXIT /B
 
 :: Check MySQL access
@@ -175,7 +197,7 @@ SET typo3DatabaseName=%mysql_database%
 :: Remove old test folders
 FOR /D %%d IN ("typo3temp\functional-*") DO RMDIR /S /Q "%%d"
 
-CALL phpunit.bat -c typo3/sysext/core/Build/FunctionalTests.xml
+CALL phpunit.bat -c typo3/sysext/core/Build/FunctionalTests.xml %phpunit_arguments%
 
 IF NOT "%mysql_path%" == "" (
 	ECHO "Stopping MySQL Server ...
@@ -184,7 +206,7 @@ IF NOT "%mysql_path%" == "" (
 GOTO EOF
 
 :USAGE
-ECHO Usage: t3testing.bat [options...]
+ECHO Usage: t3testing.bat [options...] [phpunit options...]
 ECHO.
 ECHO Options:
 ECHO --php_path=path                   Path to PHP executable. Default "C:\php"
@@ -196,6 +218,8 @@ ECHO --mysql_user=user_name            User to connect to MySQL Server. Default 
 ECHO --mysql_password=password         Password for user to connect to MySQL Server. Default ^<empty^>
 ECHO --mysql_database=prefix           Prefix for databases created for functional tests. Default "functional"
 ECHO --typo3_path=path                 Path to TYPO3 root Default ".\"
+ECHO.
+ECHO For PHPUnit command-line test runner's options see https://phpunit.de/manual/current/en/textui.html#textui.clioptions
 
 :EOF
 EXIT /B
