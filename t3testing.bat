@@ -102,7 +102,7 @@ GOTO PHP_LOOP
 
 :ADD_PHP
 :: Add php path to global path variable
-SET path=%path%;"%php_path%"
+SET path="%php_path%";%path%
 ECHO PHP found in "%php_path%" ...
 
 :PHPUNIT
@@ -127,7 +127,7 @@ GOTO PHPUNIT_LOOP
 
 :ADD_PHPUNIT
 :: Add phpunit path to global path variable
-SET path=%path%;"%phpunit_path%"
+SET path="%phpunit_path%";%path%
 ECHO PHPUnit found in "%phpunit_path%" ...
 
 :TYPO3_LOOP
