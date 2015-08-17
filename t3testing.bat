@@ -181,10 +181,13 @@ IF EXIST "%mysql_path%\mysqld.exe" GOTO START_MYSQL
 
 :: Find mysqld.exe and start MySQL Server
 ECHO Trying to find MySQL Server ...
-PUSHD C:\
-FOR /F "tokens=*" %%a IN ('dir /B /S mysqld.exe') DO (
-	SET mysql_path=%%a
-	GOTO START_MYSQL
+FOR /F "skip=1 delims=" %%x in ('wmic logicaldisk get caption') DO (
+	PUSHD %%x
+	FOR /F "tokens=*" %%a IN ('dir /B /S mysqld.exe') DO (
+		SET mysql_path=%%a
+		GOTO START_MYSQL
+	)
+	POPD
 )
 ECHO MySQL Server not running and no executable found. Please start MySQL Server on your own and restart tests
 GOTO EOF
