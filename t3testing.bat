@@ -103,6 +103,7 @@ GOTO PHP_LOOP
 :ADD_PHP
 :: Add php path to global path variable
 SET path="%php_path%";%path%
+php --version
 ECHO PHP found in "%php_path%" ...
 
 :PHPUNIT
