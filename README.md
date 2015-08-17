@@ -15,6 +15,9 @@ Path to PHP executable. Default "C:\php"
 `--phpunit_path=path`
 Path to phpunit.bat file from composer installation. Default ".\bin"
 
+`--mysql_path=path`
+Path to mysqld.exe file for MySQL Server. If not set, script tries to locate it on its own
+
 `--mysql_defaults_file=file_name`
 Path to my.ini file with the MySQL Server configuration
 

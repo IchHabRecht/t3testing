@@ -6,6 +6,7 @@ SET php_path=
 SET default_phpunit_path=%~dp0bin
 SET phpunit_path=
 SET typo3_path=.
+SET mysql_path=
 SET mysql_defaults_file=
 SET mysql_host=127.0.0.1
 SET mysql_port=3306
@@ -26,45 +27,51 @@ IF NOT "%1" == "" (
 			SHIFT
 			SET i=0
 		) ELSE (
-			IF /I [%1] == [--mysql_defaults_file] (
-				SET mysql_defaults_file=%2
+			IF /I [%1] == [--mysql_path] (
+				SET mysql_path=%2
 				SHIFT
 				SET i=0
 			) ELSE (
-				IF /I [%1] == [--mysql_host] (
-					SET mysql_host=%2
+				IF /I [%1] == [--mysql_defaults_file] (
+					SET mysql_defaults_file=%2
 					SHIFT
 					SET i=0
 				) ELSE (
-					IF /I [%1] == [--mysql_port] (
-						SET mysql_port=%2
+					IF /I [%1] == [--mysql_host] (
+						SET mysql_host=%2
 						SHIFT
 						SET i=0
 					) ELSE (
-						IF /I [%1] == [--mysql_user] (
-							SET mysql_user=%2
+						IF /I [%1] == [--mysql_port] (
+							SET mysql_port=%2
 							SHIFT
 							SET i=0
-							) ELSE (
-							IF /I [%1] == [--mysql_password] (
-								SET mysql_password=%2
+						) ELSE (
+							IF /I [%1] == [--mysql_user] (
+								SET mysql_user=%2
 								SHIFT
 								SET i=0
-							) ELSE (
-								IF /I [%1] == [--mysql_database] (
-									SET mysql_database=%2
+								) ELSE (
+								IF /I [%1] == [--mysql_password] (
+									SET mysql_password=%2
 									SHIFT
 									SET i=0
 								) ELSE (
-									IF /I [%1] == [--typo3_path] (
-										SET typo3_path=%2
+									IF /I [%1] == [--mysql_database] (
+										SET mysql_database=%2
 										SHIFT
 										SET i=0
-										) ELSE (
-										IF /I [%1] == [/?] (
-											GOTO USAGE
-										) ELSE (
-											SET phpunit_arguments=%phpunit_arguments% %1
+									) ELSE (
+										IF /I [%1] == [--typo3_path] (
+											SET typo3_path=%2
+											SHIFT
+											SET i=0
+											) ELSE (
+											IF /I [%1] == [/?] (
+												GOTO USAGE
+											) ELSE (
+												SET phpunit_arguments=%phpunit_arguments% %1
+											)
 										)
 									)
 								)
@@ -158,12 +165,19 @@ IF NOT EXIST %mysql_defaults_file% (
 
 :CHECK_MYSQL_PORT
 :: Look for an existing connection on port
-SET mysql_path=
 SET pid=
 FOR /F "tokens=5" %%p IN ('NETSTAT -ona ^| FINDSTR %mysql_port%') DO (
 	IF NOT %%p == 0 SET pid=%%p
 )
 IF NOT "%pid%" == "" GOTO FUNCTIONALTESTS
+
+:MYSQL_LOOP
+:: Remove any quotes from path
+SET mysql_path=%mysql_path:"=%
+:: Remove any backslash from path
+IF NOT %mysql_path:~-1% == \ SET mysql_path=%mysql_path%\
+:: Find mysql executable
+IF EXIST "%mysql_path%\mysqld.exe" GOTO START_MYSQL
 
 :: Find mysqld.exe and start MySQL Server
 ECHO Trying to find MySQL Server ...
@@ -212,6 +226,7 @@ ECHO.
 ECHO Options:
 ECHO --php_path=path                   Path to PHP executable. Default "C:\php"
 ECHO --phpunit_path=path               Path to phpunit.bat file from composer installation. Default ".\bin"
+ECHO --mysql_path=path                 Path to mysqld.exe file for MySQL Server. If not set, script tries to locate it on its own
 ECHO --mysql_defaults_file=file_name   Path to my.ini file with the MySQL Server configuration
 ECHO --mysql_host=addr                 Address where MySQL Server is listening. Default 127.0.0.1
 ECHO --mysql_port=port_num             Port number where MySQL Server is listening. Default 3306
