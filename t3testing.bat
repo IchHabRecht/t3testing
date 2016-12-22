@@ -14,6 +14,7 @@ SET mysql_user=root
 SET mysql_password=
 SET mysql_database=functional
 SET phpunit_arguments=
+SET server_name=
 
 :ARGUMENT_LOOP
 IF NOT "%1" == "" (
@@ -66,11 +67,17 @@ IF NOT "%1" == "" (
 											SET typo3_path=%2
 											SHIFT
 											SET i=0
+										) ELSE (
+											IF /I [%1] == [--server_name] (
+												SET server_name=%2
+												SHIFT
+												SET i=0
 											) ELSE (
-											IF /I [%1] == [/?] (
-												GOTO USAGE
-											) ELSE (
-												SET phpunit_arguments=%phpunit_arguments% %1
+												IF /I [%1] == [/?] (
+													GOTO USAGE
+												) ELSE (
+													SET phpunit_arguments=%phpunit_arguments% %1
+												)
 											)
 										)
 									)
@@ -86,6 +93,8 @@ IF NOT "%1" == "" (
 
 	GOTO ARGUMENT_LOOP
 )
+
+IF NOT [%server_name%] == [] SET PHP_IDE_CONFIG=serverName=%server_name%
 
 IF NOT [%php_path%] == [] GOTO PHP_LOOP
 
@@ -238,6 +247,7 @@ ECHO --mysql_port=port_num             Port number where MySQL Server is listeni
 ECHO --mysql_user=user_name            User to connect to MySQL Server. Default "root"
 ECHO --mysql_password=password         Password for user to connect to MySQL Server. Default ^<empty^>
 ECHO --mysql_database=prefix           Prefix for databases created for functional tests. Default "functional"
+ECHO --server_name=server_name         Set server name for PHP_IDE_CONFIG environment variable
 ECHO --typo3_path=path                 Path to TYPO3 root Default ".\"
 ECHO.
 ECHO For PHPUnit command-line test runner's options see https://phpunit.de/manual/current/en/textui.html#textui.clioptions
