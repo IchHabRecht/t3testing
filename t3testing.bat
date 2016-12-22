@@ -153,6 +153,7 @@ GOTO TYPO3_LOOP
 CD /D "%typo3_path%"
 :: Delete existing Cache folder
 IF EXIST "typo3temp\Cache" RMDIR /S /Q "typo3temp\Cache"
+IF EXIST "typo3temp\var\Cache" RMDIR /S /Q "typo3temp\var\Cache"
 CALL phpunit.bat -c typo3/sysext/core/Build/UnitTests.xml %phpunit_arguments%
 IF NOT %ERRORLEVEL% == 0 EXIT /B
 
@@ -214,6 +215,7 @@ SET typo3DatabaseName=%mysql_database%
 
 :: Remove old test folders
 FOR /D %%d IN ("typo3temp\functional-*") DO RMDIR /S /Q "%%d"
+IF EXIST "typo3temp\tests" RMDIR /S /Q "typo3temp\tests"
 
 CALL phpunit.bat -c typo3/sysext/core/Build/FunctionalTests.xml %phpunit_arguments%
 
