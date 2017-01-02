@@ -174,6 +174,11 @@ IF NOT EXIST %mysql_defaults_file% (
 )
 
 :CHECK_MYSQL_PORT
+:: Remove any quotes from path
+SET mysql_path=%mysql_path:"=%
+:: Remove any backslash from path
+IF NOT %mysql_path:~-1% == \ SET mysql_path=%mysql_path%\
+
 :: Look for an existing connection on port
 SET pid=
 FOR /F "tokens=5" %%p IN ('NETSTAT -ona ^| FINDSTR %mysql_port%') DO (
@@ -182,10 +187,6 @@ FOR /F "tokens=5" %%p IN ('NETSTAT -ona ^| FINDSTR %mysql_port%') DO (
 IF NOT "%pid%" == "" GOTO FUNCTIONALTESTS
 
 :MYSQL_LOOP
-:: Remove any quotes from path
-SET mysql_path=%mysql_path:"=%
-:: Remove any backslash from path
-IF NOT %mysql_path:~-1% == \ SET mysql_path=%mysql_path%\
 :: Find mysql executable
 IF EXIST "%mysql_path%\mysqld.exe" GOTO START_MYSQL
 
