@@ -3,9 +3,9 @@
 :: Initialize variables
 SET default_php_path=C:\php
 SET php_path=
-SET default_phpunit_path=%~dp0bin
+SET default_phpunit_path=%CD%\bin
 SET phpunit_path=
-SET typo3_path=.
+SET typo3_path=%CD%
 SET mysql_path=
 SET mysql_defaults_file=
 SET mysql_host=127.0.0.1
@@ -152,19 +152,15 @@ ECHO PHPUnit found in "%phpunit_path%" ...
 SET typo3_path=%typo3_path:"=%
 :: Remove any backslash from path
 IF %typo3_path:~-1% == \ SET typo3_path=%typo3_path:~0,-1%
-IF EXIST "%typo3_path%\typo3\sysext\core\Build\UnitTests.xml" GOTO UNITTESTS
+IF EXIST "%typo3_path%\typo3" GOTO START_MYSQL
 
 :: Ask for TYPO3 path
 SET /P typo3_path="Please enter path to TYPO3 root: "
 GOTO TYPO3_LOOP
 
-:UNITTESTS
-CD /D "%typo3_path%"
-:: Delete existing Cache folder
-IF EXIST "typo3temp\Cache" RMDIR /S /Q "typo3temp\Cache"
-IF EXIST "typo3temp\var\Cache" RMDIR /S /Q "typo3temp\var\Cache"
-CALL phpunit.bat -c typo3/sysext/core/Build/UnitTests.xml %phpunit_arguments%
-IF NOT %ERRORLEVEL% == 0 EXIT /B
+
+:START_MYSQL
+ECHO TYPO3 found in "%typo3_path%" ...
 
 :: Check MySQL access
 IF [%mysql_defaults_file%] == [] GOTO CHECK_MYSQL_PORT
@@ -184,11 +180,11 @@ SET pid=
 FOR /F "tokens=5" %%p IN ('NETSTAT -ona ^| FINDSTR %mysql_port%') DO (
 	IF NOT %%p == 0 SET pid=%%p
 )
-IF NOT "%pid%" == "" GOTO FUNCTIONALTESTS
+IF NOT "%pid%" == "" GOTO RUN_PHPUNIT
 
 :MYSQL_LOOP
 :: Find mysql executable
-IF EXIST "%mysql_path%\mysqld.exe" GOTO START_MYSQL
+IF EXIST "%mysql_path%\mysqld.exe" GOTO START_MYSQLD
 
 :: Find mysqld.exe and start MySQL Server
 ECHO Trying to find MySQL Server ...
@@ -196,14 +192,14 @@ FOR /F "skip=1 delims=" %%x in ('wmic logicaldisk get caption') DO (
 	PUSHD %%x
 	FOR /F "tokens=*" %%a IN ('dir /B /S mysqld.exe') DO (
 		SET mysql_path=%%a
-		GOTO START_MYSQL
+		GOTO START_MYSQLD
 	)
 	POPD
 )
 ECHO MySQL Server not running and no executable found. Please start MySQL Server on your own and restart tests
 GOTO EOF
 
-:START_MYSQL
+:START_MYSQLD
 SET mysql_path=%mysql_path:mysqld.exe=%
 IF NOT [%mysql_defaults_file%] == [] (
 	SET mysql_defaults_file=--defaults-file=%mysql_defaults_file%
@@ -216,18 +212,22 @@ IF NOT "%mysql_path%" == "" (
 )
 POPD
 
-:FUNCTIONALTESTS
+:RUN_PHPUNIT
 SET typo3DatabaseHost=%mysql_host%
 SET typo3DatabasePort=%mysql_port%
 SET typo3DatabaseUsername=%mysql_user%
 SET typo3DatabasePassword=%mysql_password%
 SET typo3DatabaseName=%mysql_database%
+SET TYPO3_PATH_ROOT=%typo3_path%
 
 :: Remove old test folders
+CD /D "%typo3_path%"
+:: Delete existing Cache folder
 FOR /D %%d IN ("typo3temp\functional-*") DO RMDIR /S /Q "%%d"
+IF EXIST "typo3temp\var\tests" RMDIR /S /Q "typo3temp\var\tests"
 IF EXIST "typo3temp\tests" RMDIR /S /Q "typo3temp\tests"
 
-CALL phpunit.bat -c typo3/sysext/core/Build/FunctionalTests.xml %phpunit_arguments%
+CALL phpunit.bat %phpunit_arguments%
 
 IF NOT "%mysql_path%" == "" (
 	ECHO "Stopping MySQL Server ...
