@@ -220,12 +220,10 @@ SET typo3DatabasePassword=%mysql_password%
 SET typo3DatabaseName=%mysql_database%
 SET TYPO3_PATH_ROOT=%typo3_path%
 
-:: Remove old test folders
-:: CD /D "%typo3_path%"
 :: Delete existing Cache folder
 FOR /D %%d IN ("%typo3_path%\typo3temp\functional-*") DO RMDIR /S /Q "%%d"
-IF EXIST "%typo3_path%\typo3temp\var\tests" RMDIR /S /Q "typo3temp\var\tests"
-IF EXIST "%typo3_path%\typo3temp\tests" RMDIR /S /Q "typo3temp\tests"
+IF EXIST "%typo3_path%\typo3temp\var\tests" RMDIR /S /Q "%typo3_path%\typo3temp\var\tests"
+IF EXIST "%typo3_path%\typo3temp\tests" RMDIR /S /Q "%typo3_path%\typo3temp\tests"
 
 CALL phpunit.bat %phpunit_arguments%
 
