@@ -6,6 +6,7 @@ SET php_path=
 SET default_phpunit_path=%CD%\bin
 SET phpunit_path=
 SET typo3_path=%CD%
+SET db_driver=mysqli
 SET mysql_path=
 SET mysql_defaults_file=
 SET db_host=127.0.0.1
@@ -28,55 +29,61 @@ IF NOT "%1" == "" (
 			SHIFT
 			SET i=0
 		) ELSE (
-			IF /I [%1] == [--mysql_path] (
-				SET mysql_path=%2
+			IF /I [%1] == [--db_driver] (
+				SET db_driver=%2
 				SHIFT
 				SET i=0
 			) ELSE (
-				IF /I [%1] == [--mysql_defaults_file] (
-					SET mysql_defaults_file=%2
+				IF /I [%1] == [--mysql_path] (
+					SET mysql_path=%2
 					SHIFT
 					SET i=0
 				) ELSE (
-					IF /I [%1] == [--db_host] (
-						SET db_host=%2
+					IF /I [%1] == [--mysql_defaults_file] (
+						SET mysql_defaults_file=%2
 						SHIFT
 						SET i=0
 					) ELSE (
-						IF /I [%1] == [--db_port] (
-							SET db_port=%2
+						IF /I [%1] == [--db_host] (
+							SET db_host=%2
 							SHIFT
 							SET i=0
 						) ELSE (
-							IF /I [%1] == [--db_user] (
-								SET db_user=%2
+							IF /I [%1] == [--db_port] (
+								SET db_port=%2
 								SHIFT
 								SET i=0
-								) ELSE (
-								IF /I [%1] == [--db_password] (
-									SET db_password=%2
+							) ELSE (
+								IF /I [%1] == [--db_user] (
+									SET db_user=%2
 									SHIFT
 									SET i=0
-								) ELSE (
-									IF /I [%1] == [--db_database] (
-										SET db_database=%2
+									) ELSE (
+									IF /I [%1] == [--db_password] (
+										SET db_password=%2
 										SHIFT
 										SET i=0
 									) ELSE (
-										IF /I [%1] == [--typo3_path] (
-											SET typo3_path=%2
+										IF /I [%1] == [--db_database] (
+											SET db_database=%2
 											SHIFT
 											SET i=0
 										) ELSE (
-											IF /I [%1] == [--server_name] (
-												SET server_name=%2
+											IF /I [%1] == [--typo3_path] (
+												SET typo3_path=%2
 												SHIFT
 												SET i=0
 											) ELSE (
-												IF /I [%1] == [/?] (
-													GOTO USAGE
+												IF /I [%1] == [--server_name] (
+													SET server_name=%2
+													SHIFT
+													SET i=0
 												) ELSE (
-													SET phpunit_arguments=%phpunit_arguments% %1
+													IF /I [%1] == [/?] (
+														GOTO USAGE
+													) ELSE (
+														SET phpunit_arguments=%phpunit_arguments% %1
+													)
 												)
 											)
 										)
@@ -170,6 +177,7 @@ IF NOT EXIST %mysql_defaults_file% (
 )
 
 :CHECK_DB_PORT
+IF %db_port% == "" GOTO RUN_PHPUNIT
 :: Remove any quotes from path
 SET mysql_path=%mysql_path:"=%
 :: Remove any backslash from path
@@ -213,6 +221,7 @@ IF NOT "%mysql_path%" == "" (
 POPD
 
 :RUN_PHPUNIT
+SET typo3DatabaseDriver=%db_driver%
 SET typo3DatabaseHost=%db_host%
 SET typo3DatabasePort=%db_port%
 SET typo3DatabaseUsername=%db_user%
@@ -228,7 +237,7 @@ IF EXIST "%typo3_path%\typo3temp\tests" RMDIR /S /Q "%typo3_path%\typo3temp\test
 CALL phpunit.bat %phpunit_arguments%
 
 IF NOT "%mysql_path%" == "" (
-	ECHO "Stopping MySQL Server ...
+	ECHO Stopping MySQL Server ...
 	START /B CMD /C ""%mysql_path%mysqladmin.exe" -u %db_user% --password="%db_password%" --port=%db_port% shutdown"
 )
 GOTO EOF
@@ -239,6 +248,7 @@ ECHO.
 ECHO Options:
 ECHO --php_path=path                   Path to PHP executable. Default "C:\php"
 ECHO --phpunit_path=path               Path to phpunit.bat file from composer installation. Default ".\bin"
+ECHO --db_driver=driver                Driver to use for DB connection. Default "mysqli"
 ECHO --mysql_path=path                 Path to mysqld.exe file for MySQL Server. If not set, script tries to locate it on its own
 ECHO --mysql_defaults_file=file_name   Path to my.ini file with the MySQL Server configuration
 ECHO --db_host=addr                    Address where DB Server is listening. Default 127.0.0.1
