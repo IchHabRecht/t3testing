@@ -8,11 +8,11 @@ SET phpunit_path=
 SET typo3_path=%CD%
 SET mysql_path=
 SET mysql_defaults_file=
-SET mysql_host=127.0.0.1
-SET mysql_port=3306
-SET mysql_user=root
-SET mysql_password=
-SET mysql_database=functional
+SET db_host=127.0.0.1
+SET db_port=3306
+SET db_user=root
+SET db_password=
+SET db_database=functional
 SET phpunit_arguments=
 SET server_name=
 
@@ -38,28 +38,28 @@ IF NOT "%1" == "" (
 					SHIFT
 					SET i=0
 				) ELSE (
-					IF /I [%1] == [--mysql_host] (
-						SET mysql_host=%2
+					IF /I [%1] == [--db_host] (
+						SET db_host=%2
 						SHIFT
 						SET i=0
 					) ELSE (
-						IF /I [%1] == [--mysql_port] (
-							SET mysql_port=%2
+						IF /I [%1] == [--db_port] (
+							SET db_port=%2
 							SHIFT
 							SET i=0
 						) ELSE (
-							IF /I [%1] == [--mysql_user] (
-								SET mysql_user=%2
+							IF /I [%1] == [--db_user] (
+								SET db_user=%2
 								SHIFT
 								SET i=0
 								) ELSE (
-								IF /I [%1] == [--mysql_password] (
-									SET mysql_password=%2
+								IF /I [%1] == [--db_password] (
+									SET db_password=%2
 									SHIFT
 									SET i=0
 								) ELSE (
-									IF /I [%1] == [--mysql_database] (
-										SET mysql_database=%2
+									IF /I [%1] == [--db_database] (
+										SET db_database=%2
 										SHIFT
 										SET i=0
 									) ELSE (
@@ -163,13 +163,13 @@ GOTO TYPO3_LOOP
 ECHO TYPO3 found in "%typo3_path%" ...
 
 :: Check MySQL access
-IF [%mysql_defaults_file%] == [] GOTO CHECK_MYSQL_PORT
+IF [%mysql_defaults_file%] == [] GOTO CHECK_DB_PORT
 IF NOT EXIST %mysql_defaults_file% (
 	ECHO mysql_defaults_file %mysql_defaults_file% not found
 	GOTO EOF
 )
 
-:CHECK_MYSQL_PORT
+:CHECK_DB_PORT
 :: Remove any quotes from path
 SET mysql_path=%mysql_path:"=%
 :: Remove any backslash from path
@@ -177,12 +177,12 @@ IF NOT %mysql_path:~-1% == \ SET mysql_path=%mysql_path%\
 
 :: Look for an existing connection on port
 SET pid=
-FOR /F "tokens=5" %%p IN ('NETSTAT -ona ^| FINDSTR %mysql_port%') DO (
+FOR /F "tokens=5" %%p IN ('NETSTAT -ona ^| FINDSTR %db_port%') DO (
 	IF NOT %%p == 0 SET pid=%%p
 )
 IF NOT "%pid%" == "" GOTO RUN_PHPUNIT
 
-:MYSQL_LOOP
+:DB_LOOP
 :: Find mysql executable
 IF EXIST "%mysql_path%\mysqld.exe" GOTO START_MYSQLD
 
@@ -213,11 +213,11 @@ IF NOT "%mysql_path%" == "" (
 POPD
 
 :RUN_PHPUNIT
-SET typo3DatabaseHost=%mysql_host%
-SET typo3DatabasePort=%mysql_port%
-SET typo3DatabaseUsername=%mysql_user%
-SET typo3DatabasePassword=%mysql_password%
-SET typo3DatabaseName=%mysql_database%
+SET typo3DatabaseHost=%db_host%
+SET typo3DatabasePort=%db_port%
+SET typo3DatabaseUsername=%db_user%
+SET typo3DatabasePassword=%db_password%
+SET typo3DatabaseName=%db_database%
 SET TYPO3_PATH_ROOT=%typo3_path%
 
 :: Delete existing Cache folder
@@ -229,7 +229,7 @@ CALL phpunit.bat %phpunit_arguments%
 
 IF NOT "%mysql_path%" == "" (
 	ECHO "Stopping MySQL Server ...
-	START /B CMD /C ""%mysql_path%mysqladmin.exe" -u %mysql_user% --password="%mysql_password%" --port=%mysql_port% shutdown"
+	START /B CMD /C ""%mysql_path%mysqladmin.exe" -u %db_user% --password="%db_password%" --port=%db_port% shutdown"
 )
 GOTO EOF
 
@@ -241,11 +241,11 @@ ECHO --php_path=path                   Path to PHP executable. Default "C:\php"
 ECHO --phpunit_path=path               Path to phpunit.bat file from composer installation. Default ".\bin"
 ECHO --mysql_path=path                 Path to mysqld.exe file for MySQL Server. If not set, script tries to locate it on its own
 ECHO --mysql_defaults_file=file_name   Path to my.ini file with the MySQL Server configuration
-ECHO --mysql_host=addr                 Address where MySQL Server is listening. Default 127.0.0.1
-ECHO --mysql_port=port_num             Port number where MySQL Server is listening. Default 3306
-ECHO --mysql_user=user_name            User to connect to MySQL Server. Default "root"
-ECHO --mysql_password=password         Password for user to connect to MySQL Server. Default ^<empty^>
-ECHO --mysql_database=prefix           Prefix for databases created for functional tests. Default "functional"
+ECHO --db_host=addr                    Address where DB Server is listening. Default 127.0.0.1
+ECHO --db_port=port_num                Port number where DB Server is listening. Default 3306
+ECHO --db_user=user_name               User to connect to DB Server. Default "root"
+ECHO --db_password=password            Password for user to connect to DB Server. Default ^<empty^>
+ECHO --db_database=prefix              Prefix for databases created for functional tests. Default "functional"
 ECHO --server_name=server_name         Set server name for PHP_IDE_CONFIG environment variable
 ECHO --typo3_path=path                 Path to TYPO3 root Default ".\"
 ECHO.
